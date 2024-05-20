@@ -15,6 +15,19 @@ DOCKER_RUN_CMD=$(DOCKER_COMPOSE) up --build
 # Build, run, test, and clean commands
 all: test build
 
+# Install Swagger dependencies
+install-swag:
+	go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate Swagger documentation
+generate-docs:
+	swag init -g internal/interfaces/handler/user_handler.go
+
+# Serve the Swagger documentation using a simple HTTP server
+serve-docs:
+	@echo "Serving Swagger documentation at http://localhost:8080/swagger/index.html"
+	@docker-compose up --build
+
 build:
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/server
 
