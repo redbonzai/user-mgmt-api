@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/labstack/echo/v4"
-	"github.com/redbonzai/user-management-api/internal/domain/user"
+	"github.com/labstack/echo/v4"                                   //nolint:depguard
+	"github.com/redbonzai/user-management-api/internal/domain/user" //nolint:depguard
 )
 
 type UserHandler struct {
@@ -50,6 +50,7 @@ func (handler *UserHandler) GetUser(context echo.Context) error {
 	}
 	retrievedUser, err := handler.service.GetUserByID(id)
 	if err != nil {
+
 		return context.JSON(http.StatusNotFound, "User not found")
 	}
 	return context.JSON(http.StatusOK, retrievedUser)

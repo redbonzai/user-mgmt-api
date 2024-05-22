@@ -36,5 +36,10 @@ func main() {
 
 	router := infrastructure.NewRouter()
 
-	router.Logger.Fatal(router.Start(cfg.ServerAddress))
+	// Serve static files for Swagger
+	router.Static("/swagger", "docs")
+
+	if err := router.Start(cfg.ServerAddress); err != nil {
+		logger.Fatal("Server failed to start", zap.Error(err))
+	}
 }
