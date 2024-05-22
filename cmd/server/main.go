@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/redbonzai/user-management-api/internal/config"
 	"github.com/redbonzai/user-management-api/internal/db"
 	"github.com/redbonzai/user-management-api/internal/infrastructure"
@@ -33,7 +31,7 @@ func main() {
 		logger.Fatal("could not load config:", zap.Error(err))
 	}
 
-	fmt.Printf("Config loaded successfully %v+\n", cfg)
+	logger.Info("-- Config loaded successfully --")
 	db.InitDB(cfg)
 
 	router := infrastructure.NewRouter()
