@@ -3,10 +3,12 @@ package infrastructure
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	_ "github.com/redbonzai/user-management-api/docs"
 	"github.com/redbonzai/user-management-api/internal/db"
 	"github.com/redbonzai/user-management-api/internal/domain/user"
 	"github.com/redbonzai/user-management-api/internal/interfaces/handler"
 	"github.com/redbonzai/user-management-api/internal/interfaces/repository"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 func NewRouter() *echo.Echo {
@@ -28,6 +30,9 @@ func NewRouter() *echo.Echo {
 	router.POST("/users", userHandler.CreateUser)
 	router.PUT("/users/:id", userHandler.UpdateUser)
 	router.DELETE("/users/:id", userHandler.DeleteUser)
+
+	// Serve Swagger documentation
+	router.GET("/swagger/*", echoSwagger.WrapHandler)
 	return router
 
 }

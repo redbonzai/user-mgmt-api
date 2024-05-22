@@ -61,3 +61,6 @@ docker-build:
 
 docker-run:
 	$(DOCKER_RUN_CMD)
+
+lint:
+	golangci-lint run
