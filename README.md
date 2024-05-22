@@ -81,13 +81,13 @@ DATABASE_URL=postgres://root:admin@db:5432/userapi?sslmode=disable
 1. **Build and Start the Containers**: Run the following command to build and start the Docker containers:
 
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
 2. **Stop the Containers**: To stop the containers, press `Ctrl+C` in the terminal where `docker-compose up` is running or run:
 
    ```bash
-   docker-compose down
+   docker compose down
    ```
 
 ## Working with the Makefile
