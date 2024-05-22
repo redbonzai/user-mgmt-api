@@ -111,7 +111,7 @@ The `Makefile` includes various commands to build, run, test, and clean the proj
 - **Run the Ginkgo Tests**:
 
   ```bash
-  make test
+  make ginkgo
   ```
 
 - **Generate Swagger Documentation**:
