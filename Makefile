@@ -2,7 +2,7 @@
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
-GOTEST=$(GOCMD) test
+GOTEST=$(GOCMD) ginkgo
 GOGET=$(GOCMD) get
 BINARY_NAME=user-management-api
 DOCKER_COMPOSE=docker compose
@@ -34,8 +34,9 @@ build:
 run:
 	$(DOCKER_RUN_CMD)
 
-test:
-	$(GOTEST) ./... -v
+# Run tests
+ginkgo:
+	ginkgo -r -v
 
 clean:
 	$(GOCLEAN)
