@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	_ "github.com/lib/pq"
@@ -12,7 +11,6 @@ import (
 var DB *sql.DB
 
 func InitDB(cfg *config.Config) {
-	fmt.Printf("Connecting to the database %v+", cfg)
 	var err error
 	DB, err = sql.Open("postgres", cfg.DatabaseURL)
 	if err != nil {

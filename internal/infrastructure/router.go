@@ -14,6 +14,10 @@ func NewRouter() *echo.Echo {
 
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recover())
+	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:4200"},
+		AllowMethods: []string{echo.GET, echo.PUT, echo.POST, echo.DELETE},
+	}))
 
 	userRepo := repository.NewUserRepository(db.DB)
 	userService := user.NewService(userRepo)
