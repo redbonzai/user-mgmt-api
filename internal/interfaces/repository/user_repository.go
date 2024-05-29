@@ -20,7 +20,11 @@ func NewUserRepository(db *sql.DB) user.Repository {
 
 func (repository *userRepository) GetAll() ([]user.User, error) {
 	var users []user.User
-	rows, err := squirrel.Select("id", "name", "email").From("users").RunWith(repository.db).Query()
+	rows, err := squirrel.
+		Select("id", "name", "email", "status").
+		From("users").
+		RunWith(repository.db).
+		Query()
 	if err != nil {
 		logger.Error("Error building user query:", zap.Error(err))
 		return nil, err
@@ -29,7 +33,7 @@ func (repository *userRepository) GetAll() ([]user.User, error) {
 
 	for rows.Next() {
 		var retrievedUser user.User
-		if err := rows.Scan(&retrievedUser.ID, &retrievedUser.Name, &retrievedUser.Email); err != nil {
+		if err := rows.Scan(&retrievedUser.ID, &retrievedUser.Name, &retrievedUser.Email, &retrievedUser.Status); err != nil {
 			logger.Error("Error scanning user row:", zap.Error(err))
 			return nil, err
 		}
@@ -40,7 +44,8 @@ func (repository *userRepository) GetAll() ([]user.User, error) {
 
 func (repository *userRepository) GetByID(id int) (user.User, error) {
 	var retrievedUser user.User
-	query, args, err := squirrel.Select("id", "name", "email").
+	query, args, err := squirrel.
+		Select("id", "name", "email", "status").
 		From("users").
 		Where(squirrel.Eq{"id": id}).
 		PlaceholderFormat(squirrel.Dollar).
@@ -51,7 +56,14 @@ func (repository *userRepository) GetByID(id int) (user.User, error) {
 		return retrievedUser, err
 	}
 
-	err = repository.db.QueryRow(query, args...).Scan(&retrievedUser.ID, &retrievedUser.Name, &retrievedUser.Email)
+	err = repository.
+		db.QueryRow(query, args...).
+		Scan(
+			&retrievedUser.ID,
+			&retrievedUser.Name,
+			&retrievedUser.Email,
+			&retrievedUser.Status,
+		)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			logger.Error("User not found", zap.Int("userID", id))
@@ -65,8 +77,8 @@ func (repository *userRepository) GetByID(id int) (user.User, error) {
 
 func (repository *userRepository) Create(createdUser user.User) (user.User, error) {
 	query, args, err := squirrel.Insert("users").
-		Columns("name", "email").
-		Values(createdUser.Name, createdUser.Email).
+		Columns("name", "email", "status").
+		Values(createdUser.Name, createdUser.Email, createdUser.Status).
 		Suffix("RETURNING id").
 		PlaceholderFormat(squirrel.Dollar). // Ensure PostgreSQL-compatible placeholders
 		ToSql()
@@ -88,6 +100,7 @@ func (repository *userRepository) Update(updatedUser user.User) (user.User, erro
 	query, args, err := squirrel.Update("users").
 		Set("name", updatedUser.Name).
 		Set("email", updatedUser.Email).
+		Set("status", updatedUser.Status).
 		Where(squirrel.Eq{"id": updatedUser.ID}).
 		PlaceholderFormat(squirrel.Dollar). // Ensure PostgreSQL-compatible placeholders
 		ToSql()
