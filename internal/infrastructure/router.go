@@ -1,14 +1,15 @@
 package infrastructure
 
 import (
+	echoSwagger "github.com/swaggo/echo-swagger" //nolint:depguard
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/redbonzai/user-management-api/docs"
+	"github.com/redbonzai/user-management-api/internal/authentication"
 	"github.com/redbonzai/user-management-api/internal/db"
-	"github.com/redbonzai/user-management-api/internal/domain/user"
 	"github.com/redbonzai/user-management-api/internal/interfaces/handler"
 	"github.com/redbonzai/user-management-api/internal/interfaces/repository"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/redbonzai/user-management-api/internal/services"
 )
 
 func NewRouter() *echo.Echo {
@@ -16,23 +17,33 @@ func NewRouter() *echo.Echo {
 
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recover())
+
 	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"http://localhost:4200"},
 		AllowMethods: []string{echo.GET, echo.PUT, echo.POST, echo.DELETE},
 	}))
 
 	userRepo := repository.NewUserRepository(db.DB)
-	userService := user.NewService(userRepo)
+	userService := services.NewService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
 
-	router.GET("/users", userHandler.GetUsers)
-	router.GET("/users/:id", userHandler.GetUser)
-	router.POST("/users", userHandler.CreateUser)
-	router.PUT("/users/:id", userHandler.UpdateUser)
-	router.DELETE("/users/:id", userHandler.DeleteUser)
+	// Public routes
+	router.POST("/users/login", userHandler.Login)
+	router.POST("/users/register", userHandler.Register)
+
+	// Protected routes
+	protected := router.Group("/users")
+	protected.Use(authentication.AuthMiddleware)
+
+	protected.GET("", userHandler.GetUsers)
+	protected.GET("/:id", userHandler.GetUser)
+	protected.POST("", userHandler.CreateUser)
+	protected.PUT("/:id", userHandler.UpdateUser)
+	protected.DELETE("/:id", userHandler.DeleteUser)
+	protected.DELETE("/logout", userHandler.Logout)
 
 	// Serve Swagger documentation
 	router.GET("/swagger/*", echoSwagger.WrapHandler)
-	return router
 
+	return router
 }

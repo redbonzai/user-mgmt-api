@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This is a sample server User Management server.",
+        "description": "This is a sample User Management server.",
         "title": "User Management API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {

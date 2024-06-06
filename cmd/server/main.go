@@ -10,7 +10,7 @@ import (
 
 // @title User Management API
 // @version 1.0
-// @description This is a sample server User Management server.
+// @description This is a sample User Management server.
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
@@ -21,7 +21,7 @@ import (
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host localhost:8080
-// @BasePath /api/v1
+// @BasePath /users
 func main() {
 	// Initialize logger
 	logger.InitLogger()
@@ -37,7 +37,7 @@ func main() {
 	router := infrastructure.NewRouter()
 
 	// Serve static files for Swagger
-	router.Static("/swagger", "docs")
+	router.Static("/swagger", "docs/swagger.yaml")
 
 	if err := router.Start(cfg.ServerAddress); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))
