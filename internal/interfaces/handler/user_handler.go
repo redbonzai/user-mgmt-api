@@ -192,6 +192,31 @@ func (handler *UserHandler) Login(context echo.Context) error {
 	})
 }
 
+// Logout godoc
+// @Summary Logout a user
+// @Description Logout a user and blacklist the token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body user.LoginRequest true "Credentials"
+// @Success 200 {object} map[string]string
+// @Router /v1/logout [post]
+func (handler *UserHandler) Logout(context echo.Context) error {
+	userToken := context.Get("user").(*jwt.Token)
+	claims := userToken.Claims.(jwt.MapClaims)
+	exp := int64(claims["exp"].(float64))
+
+	// Blacklist the token
+	err := handler.service.Logout(userToken.Raw, time.Unix(exp, 0))
+	if err != nil {
+		return context.JSON(http.StatusInternalServerError, "Failed to logout")
+	}
+
+	return context.JSON(http.StatusOK, map[string]string{
+		"message": "logged out successfully",
+	})
+}
+
 // Register godoc
 // @Summary Register a new user
 // @Description Register a new user
@@ -240,18 +265,15 @@ func (handler *UserHandler) Register(context echo.Context) error {
 	return context.JSON(http.StatusCreated, createdUser)
 }
 
-func (handler *UserHandler) Logout(context echo.Context) error {
+func (handler *UserHandler) GetAuthenticatedUser(context echo.Context) error {
 	userToken := context.Get("user").(*jwt.Token)
 	claims := userToken.Claims.(jwt.MapClaims)
-	exp := int64(claims["exp"].(float64))
+	username := claims["username"].(string)
 
-	// Blacklist the token
-	err := handler.service.Logout(userToken.Raw, time.Unix(exp, 0))
+	user, err := handler.service.GetUserByUsername(username)
 	if err != nil {
-		return context.JSON(http.StatusInternalServerError, "Failed to logout")
+		return context.JSON(http.StatusNotFound, "User not found")
 	}
 
-	return context.JSON(http.StatusOK, map[string]string{
-		"message": "logged out successfully",
-	})
+	return context.JSON(http.StatusOK, user)
 }

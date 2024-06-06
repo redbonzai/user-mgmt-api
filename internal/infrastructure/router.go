@@ -9,6 +9,7 @@ import (
 	"github.com/redbonzai/user-management-api/internal/db"
 	"github.com/redbonzai/user-management-api/internal/interfaces/handler"
 	"github.com/redbonzai/user-management-api/internal/interfaces/repository"
+	internalMiddleware "github.com/redbonzai/user-management-api/internal/middleware"
 	"github.com/redbonzai/user-management-api/internal/services"
 )
 
@@ -30,6 +31,9 @@ func NewRouter() *echo.Echo {
 	// Public routes
 	router.POST("/users/login", userHandler.Login)
 	router.POST("/users/register", userHandler.Register)
+
+	// Apply the response interceptor
+	router.Use(internalMiddleware.ResponseInterceptor)
 
 	// Protected routes
 	protected := router.Group("/users")
