@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	//nolint:depguard
 	//nolint:depguard
-	"github.com/redbonzai/user-management-api/internal/authentication"
 	"github.com/redbonzai/user-management-api/internal/interfaces"
+	"github.com/redbonzai/user-management-api/internal/middleware/authentication"
 	"github.com/redbonzai/user-management-api/pkg/logger"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -32,7 +33,7 @@ func NewUserHandler(service interfaces.Service) *UserHandler {
 // @Accept  json
 // @Produce  json
 // @Success 200 {array} user.User
-// @Router /users [get]
+// @Router /v1/users [get]
 func (handler *UserHandler) GetUsers(context echo.Context) error {
 	users, err := handler.service.GetUsers()
 	fmt.Printf("GET USERS : %v+\n", users)
@@ -52,7 +53,7 @@ func (handler *UserHandler) GetUsers(context echo.Context) error {
 // @Produce  json
 // @Param id path int true "User ID"
 // @Success 200 {object} user.User
-// @Router /users/{id} [get]
+// @Router /v1/users/{id} [get]
 func (handler *UserHandler) GetUser(context echo.Context) error {
 	id, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
@@ -75,7 +76,7 @@ func (handler *UserHandler) GetUser(context echo.Context) error {
 // @Produce  json
 // @Param user body user.User true "Create User"
 // @Success 201 {object} map[string]int
-// @Router /users [post]
+// @Router /v1/users [post]
 func (handler *UserHandler) CreateUser(context echo.Context) error {
 	var createdUser interfaces.User
 	if err := context.Bind(&createdUser); err != nil {
@@ -100,7 +101,7 @@ func (handler *UserHandler) CreateUser(context echo.Context) error {
 // @Param id path int true "User ID"
 // @Param user body user.User true "Update User"
 // @Success 200
-// @Router /users/{id} [put]
+// @Router /v1/users/{id} [put]
 func (handler *UserHandler) UpdateUser(context echo.Context) error {
 	id, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
@@ -113,6 +114,39 @@ func (handler *UserHandler) UpdateUser(context echo.Context) error {
 		logger.Error("Invalid input: ", zap.Error(err))
 		return context.JSON(http.StatusBadRequest, "Invalid input")
 	}
+
+	// Fetch the existing user to compare changes
+	existingUser, err := handler.service.GetUserByID(id)
+	if err != nil {
+		logger.Error("User not found: ", zap.Error(err))
+		return context.JSON(http.StatusNotFound, "User not found")
+	}
+
+	// Update only the fields provided in the request
+	if updatedUser.Name == "" {
+		updatedUser.Name = existingUser.Name
+	}
+	if updatedUser.Email == "" {
+		updatedUser.Email = existingUser.Email
+	}
+	if updatedUser.Status == nil {
+		updatedUser.Status = existingUser.Status
+	}
+	if updatedUser.Username == "" {
+		updatedUser.Username = existingUser.Username
+	}
+	if updatedUser.Password != "" {
+		// Hash the new password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updatedUser.Password), bcrypt.DefaultCost)
+		if err != nil {
+			logger.Error("Error hashing password: ", zap.Error(err))
+			return context.JSON(http.StatusInternalServerError, "Error hashing password")
+		}
+		updatedUser.Password = string(hashedPassword)
+	} else {
+		updatedUser.Password = existingUser.Password
+	}
+
 	updatedUser.ID = id
 	updated, err := handler.service.UpdateUser(updatedUser)
 	if err != nil {
@@ -131,7 +165,7 @@ func (handler *UserHandler) UpdateUser(context echo.Context) error {
 // @Produce  json
 // @Param id path int true "User ID"
 // @Success 204
-// @Router /users/{id} [delete]
+// @Router /v1/users/{id} [delete]
 func (handler *UserHandler) DeleteUser(context echo.Context) error {
 	id, err := strconv.Atoi(context.Param("id"))
 	if err != nil {
@@ -155,7 +189,7 @@ func (handler *UserHandler) DeleteUser(context echo.Context) error {
 // @Produce json
 // @Param credentials body user.LoginRequest true "Credentials"
 // @Success 200 {object} map[string]string
-// @Router /v1/login [post]
+// @Router /login [post]
 func (handler *UserHandler) Login(context echo.Context) error {
 	var loginRequest interfaces.LoginRequest
 	if err := context.Bind(&loginRequest); err != nil {
@@ -200,7 +234,7 @@ func (handler *UserHandler) Login(context echo.Context) error {
 // @Produce json
 // @Param credentials body user.LoginRequest true "Credentials"
 // @Success 200 {object} map[string]string
-// @Router /v1/logout [post]
+// @Router /logout [post]
 func (handler *UserHandler) Logout(context echo.Context) error {
 	userToken := context.Get("user").(*jwt.Token)
 	claims := userToken.Claims.(jwt.MapClaims)
@@ -225,7 +259,7 @@ func (handler *UserHandler) Logout(context echo.Context) error {
 // @Produce json
 // @Param user body user.User true "User"
 // @Success 201 {object} user.User
-// @Router /v1/register [post]
+// @Router /register [post]
 func (handler *UserHandler) Register(context echo.Context) error {
 	var registerRequest interfaces.RegisterRequest
 	if err := context.Bind(&registerRequest); err != nil {
@@ -265,14 +299,42 @@ func (handler *UserHandler) Register(context echo.Context) error {
 	return context.JSON(http.StatusCreated, createdUser)
 }
 
+// GetAuthenticatedUser godoc
+// @Summary Get the authenticated user
+// @Description Get the authenticated user
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} user.User
+// @Router /v1/current-user [get]
 func (handler *UserHandler) GetAuthenticatedUser(context echo.Context) error {
-	userToken := context.Get("user").(*jwt.Token)
-	claims := userToken.Claims.(jwt.MapClaims)
-	username := claims["username"].(string)
+	//userToken, ok := context.Get("username").(jwt.MapClaims)
+	//fmt.Printf("USER TOKEN: %v\n", userToken)
+	//if !ok {
+	//	return context.JSON(http.StatusUnauthorized, "invalid or expired jwt")
+	//}
+	//
+	//username, ok := userToken["username"].(string)
+	//fmt.Printf("USERNAME: %v\n", username)
+	//if !ok {
+	//	return context.JSON(http.StatusUnauthorized, "invalid or expired jwt")
+	//}
+	authHeader := context.Request().Header.Get("Authorization")
+	fmt.Printf("AUTH HEADER: %v\n", authHeader)
+	
+	if authHeader == "" {
+		return context.JSON(http.StatusUnauthorized, "missing or malformed jwt")
+	}
+	tokenStr := strings.Split(authHeader, " ")[1]
+	fmt.Printf("TOKEN STRING: %v\n", tokenStr)
+
+	username, err := authentication.ParseToken(tokenStr)
+	fmt.Printf("USERNAME: %v\n", username)
 
 	user, err := handler.service.GetUserByUsername(username)
+	fmt.Printf("USER BY USERNAME: %v\n", user)
 	if err != nil {
-		return context.JSON(http.StatusNotFound, "User not found")
+		return context.JSON(http.StatusNotFound, map[string]string{"message": "User not found"})
 	}
 
 	return context.JSON(http.StatusOK, user)

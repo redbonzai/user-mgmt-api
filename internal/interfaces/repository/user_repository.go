@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -53,6 +54,7 @@ func (repository *userRepository) GetAll() ([]interfaces.User, error) {
 			return nil, err
 		}
 		users = append(users, retrievedUser)
+		fmt.Printf("RETRIEVED USERS : %v\n", users)
 	}
 	return users, nil
 }
@@ -149,17 +151,31 @@ func (repository *userRepository) Create(createdUser interfaces.User) (interface
 }
 
 func (repository *userRepository) Update(updatedUser interfaces.User) (interfaces.User, error) {
-	query, args, err := squirrel.Update("users").
-		Set("name", updatedUser.Name).
-		Set("email", updatedUser.Email).
-		Set("status", updatedUser.Status).
-		Set("status", updatedUser.Username).
-		Set("status", updatedUser.Password).
+	queryBuilder := squirrel.Update("users")
+
+	if updatedUser.Name != "" {
+		queryBuilder = queryBuilder.Set("name", updatedUser.Name)
+	}
+	if updatedUser.Email != "" {
+		queryBuilder = queryBuilder.Set("email", updatedUser.Email)
+	}
+	if updatedUser.Status != nil {
+		queryBuilder = queryBuilder.Set("status", updatedUser.Status)
+	}
+	if updatedUser.Username != "" {
+		queryBuilder = queryBuilder.Set("username", updatedUser.Username)
+	}
+	if updatedUser.Password != "" {
+		queryBuilder = queryBuilder.Set("password", updatedUser.Password)
+	}
+
+	query, args, err := queryBuilder.
 		Where(squirrel.Eq{"id": updatedUser.ID}).
 		PlaceholderFormat(squirrel.Dollar). // Ensure PostgreSQL-compatible placeholders
 		ToSql()
+
 	if err != nil {
-		logger.Error("Error building SQL query: %v", zap.Error(err))
+		logger.Error("Error building SQL query: ", zap.Error(err))
 		return updatedUser, err
 	}
 
@@ -171,6 +187,30 @@ func (repository *userRepository) Update(updatedUser interfaces.User) (interface
 
 	return repository.GetByID(updatedUser.ID)
 }
+
+//func (repository *userRepository) Update(updatedUser interfaces.User) (interfaces.User, error) {
+//	query, args, err := squirrel.Update("users").
+//		Set("name", updatedUser.Name).
+//		Set("email", updatedUser.Email).
+//		Set("status", updatedUser.Status).
+//		Set("username", updatedUser.Username).
+//		Set("password", updatedUser.Password).
+//		Where(squirrel.Eq{"id": updatedUser.ID}).
+//		PlaceholderFormat(squirrel.Dollar). // Ensure PostgreSQL-compatible placeholders
+//		ToSql()
+//	if err != nil {
+//		logger.Error("Error building SQL query: %v", zap.Error(err))
+//		return updatedUser, err
+//	}
+//
+//	_, err = repository.db.Exec(query, args...)
+//	if err != nil {
+//		logger.Error("Error updating user:", zap.Error(err))
+//		return updatedUser, err
+//	}
+//
+//	return repository.GetByID(updatedUser.ID)
+//}
 
 func (repository *userRepository) Delete(id int) (interfaces.User, error) {
 	deletedUser, err := repository.GetByID(id)

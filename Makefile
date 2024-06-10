@@ -13,15 +13,15 @@ DOCKER_BUILD_CMD=docker build -t $(BINARY_NAME) .
 DOCKER_RUN_CMD=$(DOCKER_COMPOSE) up --build
 
 # Build, run, test, and clean commands
-all: test build
+all: ginkgo build
 
 # Install Swagger dependencies
 install-swag:
-	go install github.com/swaggo/swag/cmd/swag@latest
+	go get -u github.com/swaggo/swag/cmd/swag
+	go get -u github.com/swaggo/echo-swagger
 
-# Generate Swagger documentation
-generate-docs:
-	swag init -g internal/interfaces/handler/user_handler.go
+swag-init:
+	swag init --dir cmd/server --output docs/
 
 # Serve the Swagger documentation using a simple HTTP server
 serve-docs:
@@ -33,6 +33,14 @@ build:
 
 run:
 	$(DOCKER_RUN_CMD)
+
+repository-mocks:
+	mockgen -source=internal/interfaces/repository/user_repository.go -destination=internal/interfaces/repository/mocks/mock_user_repository.go -package=mocks
+
+service-mocks:
+	mockgen -source=internal/services/user_service.go -destination=internal/services/mocks/mock_service.go -package=mocks
+
+
 
 # Run tests
 ginkgo:
