@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -21,7 +22,7 @@ func JWTMiddleware() echo.MiddlewareFunc {
 		ContextKey:    "user",
 		ErrorHandler: func(context echo.Context, err error) error {
 			logger.Error("Error validating jwt:", zap.Error(err))
-			
+
 			return context.JSON(http.StatusUnauthorized, map[string]string{
 				"message": "invalid or expired jwt",
 			})
@@ -39,6 +40,8 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		tokenStr := strings.Split(authHeader, " ")[1]
 		username, err := ParseToken(tokenStr)
+		fmt.Printf("USERNAME: %v\n", username)
+
 		if err != nil {
 			return context.JSON(http.StatusUnauthorized, "invalid or expired jwt")
 		}

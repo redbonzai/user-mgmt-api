@@ -6,6 +6,7 @@ package mocks
 
 import (
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	interfaces "github.com/redbonzai/user-management-api/internal/interfaces"
@@ -107,6 +108,50 @@ func (m *MockService) GetUsers() ([]interfaces.User, error) {
 func (mr *MockServiceMockRecorder) GetUsers() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockService)(nil).GetUsers))
+}
+
+// HashPassword mocks base method.
+func (m *MockService) HashPassword(password string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HashPassword", password)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HashPassword indicates an expected call of HashPassword.
+func (mr *MockServiceMockRecorder) HashPassword(password interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HashPassword", reflect.TypeOf((*MockService)(nil).HashPassword), password)
+}
+
+// IsUsernameUnique mocks base method.
+func (m *MockService) IsUsernameUnique(username string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUsernameUnique", username)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsUsernameUnique indicates an expected call of IsUsernameUnique.
+func (mr *MockServiceMockRecorder) IsUsernameUnique(username interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUsernameUnique", reflect.TypeOf((*MockService)(nil).IsUsernameUnique), username)
+}
+
+// Logout mocks base method.
+func (m *MockService) Logout(token string, expiry time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Logout", token, expiry)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Logout indicates an expected call of Logout.
+func (mr *MockServiceMockRecorder) Logout(token, expiry interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockService)(nil).Logout), token, expiry)
 }
 
 // UpdateUser mocks base method.

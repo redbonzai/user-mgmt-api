@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -27,18 +28,23 @@ func GenerateToken(username string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-// ParseToken parses a JWT token and returns the username
+// ParseToken parses and validates the token, returning the username
 func ParseToken(tokenStr string) (string, error) {
-	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
+	secretKey := []byte(os.Getenv("SECRET_KEY"))
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return secretKey, nil
 	})
+
 	if err != nil {
 		return "", err
 	}
 
-	if !token.Valid {
-		return "", err
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims["username"].(string), nil
 	}
-	return claims.Username, nil
+
+	return "", fmt.Errorf("invalid token")
 }
