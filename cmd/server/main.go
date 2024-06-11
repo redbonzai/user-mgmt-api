@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+
+	"github.com/joho/godotenv"
 	"github.com/redbonzai/user-management-api/internal/config"
 	"github.com/redbonzai/user-management-api/internal/db"
 	"github.com/redbonzai/user-management-api/internal/infrastructure"
@@ -23,6 +26,12 @@ import (
 // @host localhost:8080
 // @BasePath /users
 func main() {
+	// Load environment variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
 	// Initialize logger
 	logger.InitLogger()
 
@@ -38,6 +47,24 @@ func main() {
 
 	// Serve static files for Swagger
 	router.Static("/swagger", "docs/swagger.yaml")
+
+	// sess := aws.CreateAWSSession()
+
+	//s3svc := s3.New(sess)
+	//iamClient := iam.New(sess)
+	//lambdaClient := lambda.New(sess)
+	//apiGateWayClient := apigateway.New(sess)
+	//sqsClient := sqs.New(sess)
+	//dynamodbClient := dynamodb.New(sess)
+
+	//aws.CreateS3BucketIfNotExists(s3svc, "user-management-api-bucket")
+	//roleArn := aws.CreateIAMRole(iamClient)
+	//aws.CreateLambdaFunction(lambdaClient, roleArn)
+	//
+	//lambdaArn := fmt.Sprintf(os.Getenv("LAMBDA_ARN"))
+	//aws.CreateAPIGateway(apiGateWayClient, lambdaArn)
+	//aws.CreateSQSQueue(sqsClient)
+	//aws.CreateDynamoDBTable(dynamodbClient)
 
 	if err := router.Start(cfg.ServerAddress); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))

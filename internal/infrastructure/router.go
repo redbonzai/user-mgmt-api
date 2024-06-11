@@ -46,7 +46,7 @@ func NewRouter() *echo.Echo {
 
 	// Protected routes
 	protected := router.Group("/v1/users")
-	protected.Use(authentication.AuthMiddleware)
+	protected.Use(authentication.JWTMiddleware())
 
 	protected.GET("", userHandler.GetUsers)
 	protected.GET("/:id", userHandler.GetUser)

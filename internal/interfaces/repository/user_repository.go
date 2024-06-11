@@ -188,30 +188,6 @@ func (repository *userRepository) Update(updatedUser interfaces.User) (interface
 	return repository.GetByID(updatedUser.ID)
 }
 
-//func (repository *userRepository) Update(updatedUser interfaces.User) (interfaces.User, error) {
-//	query, args, err := squirrel.Update("users").
-//		Set("name", updatedUser.Name).
-//		Set("email", updatedUser.Email).
-//		Set("status", updatedUser.Status).
-//		Set("username", updatedUser.Username).
-//		Set("password", updatedUser.Password).
-//		Where(squirrel.Eq{"id": updatedUser.ID}).
-//		PlaceholderFormat(squirrel.Dollar). // Ensure PostgreSQL-compatible placeholders
-//		ToSql()
-//	if err != nil {
-//		logger.Error("Error building SQL query: %v", zap.Error(err))
-//		return updatedUser, err
-//	}
-//
-//	_, err = repository.db.Exec(query, args...)
-//	if err != nil {
-//		logger.Error("Error updating user:", zap.Error(err))
-//		return updatedUser, err
-//	}
-//
-//	return repository.GetByID(updatedUser.ID)
-//}
-
 func (repository *userRepository) Delete(id int) (interfaces.User, error) {
 	deletedUser, err := repository.GetByID(id)
 	if err != nil {

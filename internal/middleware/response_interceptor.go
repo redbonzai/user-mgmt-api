@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo/v4"
 )
@@ -33,7 +34,7 @@ func ResponseInterceptor(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		wrappedResponse := ResponseWrapper{
-			Version: "1.0.0", // Set your API version here
+			Version: os.Getenv("API_VERSION"),
 			Data:    originalResponse,
 		}
 
