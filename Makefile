@@ -12,6 +12,13 @@ DOCKER_COMPOSE_FILE=docker-compose.yml
 DOCKER_BUILD_CMD=docker build -t $(BINARY_NAME) .
 DOCKER_RUN_CMD=$(DOCKER_COMPOSE) up --build
 
+# Migration parameters
+MIGRATE_CMD=migrate
+MIGRATE_DIR=internal/db/migrations
+DATABASE_URL=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DB)?sslmode=disable
+
+
+
 # Build, run, test, and clean commands
 all: ginkgo build
 
@@ -59,6 +66,7 @@ deps:
 	$(GOGET) -u github.com/onsi/gomega
 	$(GOGET) -u github.com/swaggo/echo-swagger
 	$(GOGET) -u go.uber.org/zap
+	$(GOGET) -u github.com/golang-migrate/migrate/v4/cmd/migrate
 
 # Commands for generating Swagger documentation
 swagger-init:
@@ -73,3 +81,17 @@ docker-run:
 
 lint:
 	golangci-lint run
+
+# Migration commands
+migration-create:
+	@read -p "Enter migration name: " name; \
+	migrate create -dir $(MIGRATE_DIR) -ext sql $$name
+
+migration-up:
+	@export $(cat .env | xargs) && \
+	$(MIGRATE_CMD) -path $(MIGRATE_DIR) -database "postgres://root:admin@localhost:5432/userapi?sslmode=disable" up
+
+migration-down:
+	@export $(cat .env | xargs) && \
+	$(MIGRATE_CMD) -path $(MIGRATE_DIR) -database "postgres://root:admin@localhost:5432/userapi?sslmode=disable" down 1
+
