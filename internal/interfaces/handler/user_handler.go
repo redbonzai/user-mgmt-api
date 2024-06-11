@@ -3,14 +3,13 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
-	//nolint:depguard
-	//nolint:depguard
 	"github.com/redbonzai/user-management-api/internal/interfaces"
 	"github.com/redbonzai/user-management-api/internal/middleware/authentication"
 	"github.com/redbonzai/user-management-api/pkg/logger"
@@ -232,16 +231,35 @@ func (handler *UserHandler) Login(context echo.Context) error {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param credentials body user.LoginRequest true "Credentials"
 // @Success 200 {object} map[string]string
 // @Router /logout [post]
 func (handler *UserHandler) Logout(context echo.Context) error {
-	userToken := context.Get("user").(*jwt.Token)
-	claims := userToken.Claims.(jwt.MapClaims)
-	exp := int64(claims["exp"].(float64))
+	var jwtSecret = []byte(os.Getenv("SECRET_KEY"))
+
+	authHeader := context.Request().Header.Get("Authorization")
+	if authHeader == "" {
+		return context.JSON(http.StatusUnauthorized, "missing or malformed jwt")
+	}
+	tokenStr := strings.Split(authHeader, " ")[1]
+
+	// Parse the token to get the claims
+	claims := &authentication.Claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			logger.Error("Unexpected signing method: ", zap.Any("alg", token.Header["alg"]))
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		logger.Error("Signature is invalid for token: ", zap.Error(err))
+		return context.JSON(http.StatusUnauthorized, "invalid or expired jwt")
+	}
 
 	// Blacklist the token
-	err := handler.service.Logout(userToken.Raw, time.Unix(exp, 0))
+	expiry := time.Unix(claims.ExpiresAt, 0)
+	err = handler.service.Logout(tokenStr, expiry)
 	if err != nil {
 		return context.JSON(http.StatusInternalServerError, "Failed to logout")
 	}
@@ -308,31 +326,17 @@ func (handler *UserHandler) Register(context echo.Context) error {
 // @Success 200 {object} user.User
 // @Router /v1/current-user [get]
 func (handler *UserHandler) GetAuthenticatedUser(context echo.Context) error {
-	//userToken, ok := context.Get("username").(jwt.MapClaims)
-	//fmt.Printf("USER TOKEN: %v\n", userToken)
-	//if !ok {
-	//	return context.JSON(http.StatusUnauthorized, "invalid or expired jwt")
-	//}
-	//
-	//username, ok := userToken["username"].(string)
-	//fmt.Printf("USERNAME: %v\n", username)
-	//if !ok {
-	//	return context.JSON(http.StatusUnauthorized, "invalid or expired jwt")
-	//}
 	authHeader := context.Request().Header.Get("Authorization")
 	fmt.Printf("AUTH HEADER: %v\n", authHeader)
-	
+
 	if authHeader == "" {
 		return context.JSON(http.StatusUnauthorized, "missing or malformed jwt")
 	}
 	tokenStr := strings.Split(authHeader, " ")[1]
-	fmt.Printf("TOKEN STRING: %v\n", tokenStr)
 
 	username, err := authentication.ParseToken(tokenStr)
-	fmt.Printf("USERNAME: %v\n", username)
 
 	user, err := handler.service.GetUserByUsername(username)
-	fmt.Printf("USER BY USERNAME: %v\n", user)
 	if err != nil {
 		return context.JSON(http.StatusNotFound, map[string]string{"message": "User not found"})
 	}

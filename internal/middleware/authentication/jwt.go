@@ -30,6 +30,10 @@ func GenerateToken(username string) (string, error) {
 
 // ParseToken parses and validates the token, returning the username
 func ParseToken(tokenStr string) (string, error) {
+	if isBlacklisted(tokenStr) {
+		return "", fmt.Errorf("token is blacklisted")
+	}
+	
 	secretKey := []byte(os.Getenv("SECRET_KEY"))
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

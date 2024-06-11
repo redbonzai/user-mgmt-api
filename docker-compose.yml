@@ -9,7 +9,35 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+        - localstack_net
 
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    environment:
+        SERVICES: s3,sqs,dynamodb,lambda,apigateway,iam
+        DEFAULT_REGION: us-east-1
+        DOCKER_HOST: "unix:///var/run/docker.sock"
+        HOST_TMP_FOLDER: /tmp/localstack
+        DEBUG: 1
+        DATA_DIR: /tmp/localstack/data
+        PORT_WEB_UI: 8080
+        LAMBDA_EXECUTOR: docker
+        LAMBDA_DOCKER_NETWORK: bridge
+        LAMBDA_REMOVE_CONTAINERS: true
+        LAMBDA_REMOVE_IMAGE: true
+        LAMBDA_TMP_DIR: /tmp/lambda
+        LAMBDA_REMOTE_DOCKER: true
+        AWS_ACCESS_KEY_ID: test
+        AWS_SECRET_ACCESS_KEY: test
+    volumes:
+      - localstack_data:/tmp/localstack_new
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - localstack_net
   api:
     build: .
     command: go run ./cmd/server/main.go
@@ -27,6 +55,7 @@ services:
       - "8080:8080"
     depends_on:
       - db
+      - localstack
     environment:
       SERVER_ADDRESS: ${SERVER_ADDRESS}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -34,6 +63,20 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: db
       DATABASE_URL: ${DATABASE_URL}
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+      DYNAMODB_ENDPOINT: http://localstack:4566
+      SQS_ENDPOINT: http://localstack:4566
+      S3_ENDPOINT: http://localstack:4566
+      SECRET_KEY: ${SECRET_KEY}
+      API_VERSION: ${API_VERSION}
+    networks:
+        - localstack_net
 
 volumes:
   postgres_data:
+  localstack_data:
+networks:
+  localstack_net:
+    driver: bridge
