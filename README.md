@@ -9,10 +9,11 @@ This project is a User Management API built with Go (Golang) and Echo. It includ
 ## Table of Contents
 
 1. [Environment Variables](#environment-variables)
-2. [Installing and Setting Up Docker](#installing-and-setting-up-docker)
-3. [Working with the Makefile](#working-with-the-makefile)
-4. [Running the Ginkgo Tests](#running-the-ginkgo-tests)
-5. [Postman Collection](#postman-collection)
+2. [Installing The Database](#installing-the-database)
+3. [Installing and Setting Up Docker](#installing-and-setting-up-docker)
+4. [Working with the Makefile](#working-with-the-makefile)
+5. [Running the Ginkgo Tests](#running-the-ginkgo-tests)
+6. [Postman Collection](#postman-collection)
 
 ## Environment Variables
 
@@ -26,6 +27,11 @@ POSTGRES_DB=userapi
 POSTGRES_HOST=db
 DATABASE_URL=postgres://root:admin@db:5432/userapi?sslmode=disable
 ```
+
+## Installing The Database
+    ```terminal
+    make migration-up
+    ```
 
 ## Installing and Setting Up Docker
 

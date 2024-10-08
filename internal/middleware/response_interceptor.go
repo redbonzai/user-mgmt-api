@@ -14,6 +14,11 @@ type ResponseWrapper struct {
 	Data    interface{} `json:"data"`
 }
 
+type bodyWriter struct {
+	http.ResponseWriter
+	body *bytes.Buffer
+}
+
 func ResponseInterceptor(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(context echo.Context) error {
 		rec := context.Response().Writer
@@ -50,11 +55,6 @@ func ResponseInterceptor(next echo.HandlerFunc) echo.HandlerFunc {
 
 		return nil
 	}
-}
-
-type bodyWriter struct {
-	http.ResponseWriter
-	body *bytes.Buffer
 }
 
 func (writer *bodyWriter) Write(bytes []byte) (int, error) {
