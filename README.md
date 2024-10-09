@@ -29,9 +29,9 @@ DATABASE_URL=postgres://root:admin@db:5432/userapi?sslmode=disable
 ```
 
 ## Installing The Database
-    ```terminal
-    make migration-up
-    ```
+```terminal
+make migration-up
+```
 
 ## Installing and Setting Up Docker
 
